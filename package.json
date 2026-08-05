@@ -1,0 +1,14 @@
+{
+  "name": "okf-skills-workspace",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "description": "Validation tooling for Open Knowledge Stack Agent Skills",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/skill-format.test.mjs",
+    "validate": "node scripts/validate-skills.mjs",
+    "check": "npm test && npm run validate"
+  },
+  "license": "Apache-2.0"
+}
