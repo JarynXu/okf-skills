@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: bash -n skills/okf/scripts/okf-health.sh
+      - name: Build skill archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          export VERSION
+          mkdir -p dist
+          python - <<'PY'
+          import hashlib
+          import os
+          import pathlib
+          import tarfile
+          import zipfile
+
+          version = os.environ["VERSION"]
+          root = pathlib.Path("skills/okf")
+          dist = pathlib.Path("dist")
+          base = f"okf-skill-v{version}"
+          tar_path = dist / f"{base}.tar.gz"
+          zip_path = dist / f"{base}.zip"
+
+          with tarfile.open(tar_path, "w:gz") as archive:
+              archive.add(root, arcname="okf")
+              archive.add("LICENSE", arcname="LICENSE")
+              archive.add("README.md", arcname="README.md")
+
+          with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+              for path in root.rglob("*"):
+                  if path.is_file():
+                      archive.write(path, pathlib.Path("okf") / path.relative_to(root))
+              archive.write("LICENSE", "LICENSE")
+              archive.write("README.md", "README.md")
+
+          lines = []
+          for path in (tar_path, zip_path):
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              lines.append(f"{digest}  {path.name}")
+          (dist / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; nothing to do."
+            exit 0
+          fi
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "OKF Agent Skill $TAG" \
+            --generate-notes \
+            --prerelease
