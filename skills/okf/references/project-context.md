@@ -19,11 +19,11 @@ With MCP, use `okf_project_init` with equivalent arguments.
 Treat project context as one of four states:
 
 - `UNINITIALIZED`: no usable validated project-context checkpoint exists; bootstrap project knowledge.
-- `VALID`: the Library's validated repository revision matches the current authoritative revision; restore and query task-local context.
-- `DIRTY`: repository state changed after the Library's validated revision; perform incremental impact analysis/revalidation.
+- `VALID`: the validated repository revision matches the current authoritative revision and there are no relevant staged, unstaged, or untracked working-tree changes.
+- `DIRTY`: committed repository state or the working tree differs from the validated checkpoint; perform incremental impact analysis/revalidation.
 - `UNKNOWN`: freshness cannot be established; revalidate conservatively before modifying the project.
 
-Do not infer these states from conversational memory. Evaluate them through:
+Do not infer these states from conversational memory or from `HEAD` alone. Evaluate them through:
 
 ```bash
 okf project status --output json
@@ -31,7 +31,7 @@ okf project status --output json
 
 or MCP `okf_project_status`.
 
-The status result includes `validated_revision`, `current_revision`, changed repository paths when the delta can be established, and `impacted_topics` derived from profile impact rules.
+The status result includes `validated_revision`, `current_revision`, committed and working-tree changed paths when the delta can be established, and `impacted_topics` derived from profile impact rules.
 
 ## Session/subagent entry
 
@@ -44,11 +44,11 @@ A new session or child Agent should:
 5. follow source/evidence pointers where the task requires stronger verification;
 6. avoid a full repository relearn merely because conversational context is new.
 
-When a parent Agent delegates work, pass the project/revision, relevant Library identity/URIs, and task scope. The child should verify revision compatibility before using inherited context.
+When a parent Agent delegates work, pass the project/revision, relevant Library identity/URIs, and task scope. The child should verify revision and working-tree compatibility before using inherited context.
 
 ## Incremental revalidation
 
-When context is `DIRTY`, identify changes since the validated revision, determine affected knowledge/topics, and invalidate or update only those regions when possible. Impact rules are invalidation hints, not proof that unrelated topics are correct. Dependency upgrades, migrations, build-system changes, cross-cutting refactors, or failed invariants may require broader revalidation.
+When context is `DIRTY`, identify committed changes since the validated revision plus current staged, unstaged, and untracked changes, determine affected knowledge/topics, and invalidate or update only those regions when possible. Impact rules are invalidation hints, not proof that unrelated topics are correct. Dependency upgrades, migrations, build-system changes, cross-cutting refactors, or failed invariants may require broader revalidation.
 
 The default scaffold maps common source/package paths to architecture/components and build/configuration paths to constraints. Projects should refine profile impact rules as their structure stabilizes.
 
@@ -74,7 +74,8 @@ Authorized maintenance should:
 3. preserve provenance/evidence pointers;
 4. refresh catalog/index state if needed;
 5. run project-required tests, validation, and review;
-6. only after those checks pass, advance the checkpoint:
+6. commit the intended source/knowledge changes when required by project policy;
+7. only after those checks pass, advance the checkpoint:
 
 ```bash
 okf project checkpoint
@@ -82,7 +83,7 @@ okf project checkpoint
 
 or MCP `okf_project_checkpoint`.
 
-`checkpoint` is not a verification command. It records the revision that the maintenance workflow has already verified. Never advance it before required project validation completes.
+`checkpoint` is not a verification command and does not mutate portable knowledge content after selecting the revision. It records the revision that the maintenance workflow has already verified. Never advance it before required project validation completes.
 
 ## Profile boundary
 
