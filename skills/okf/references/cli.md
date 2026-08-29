@@ -1,29 +1,37 @@
 # OKF CLI reference for Agents
 
-Use global options before the subcommand. Core bundle operations select `--bundle`; Library operations use the persistent `--registry` (default `.okf/libraries.json`); Project Context operations use `--project-context` (default `.okf/project-context.json`). Prefer `--output json` for Agent reasoning.
+Use global options before the subcommand. `--bundle` selects the ordinary bundle and `--registry` selects the Library registry (default `.okf/libraries.json`). Prefer `--output json` for Agent reasoning.
 
-## Core bundle operations
+Mounted Libraries transparently extend the active OKF knowledge space. Do not switch to a separate Library retrieval command set.
+
+## Knowledge operations
 
 ```bash
-okf --bundle "$BUNDLE" --output json <command>
+okf --bundle "$BUNDLE" --registry "$REGISTRY" --output json <command>
 ```
 
 | Intent | Command |
 | --- | --- |
-| Initialize | `okf --bundle "$BUNDLE" --output json init` |
-| Validate | `okf --bundle "$BUNDLE" --output json validate` |
-| Allow unresolved references | `okf --bundle "$BUNDLE" --output json validate --allow-unresolved` |
-| Deny warnings | `okf --bundle "$BUNDLE" --output json validate --deny-warnings` |
-| List documents | `okf --bundle "$BUNDLE" --output json list` |
-| Filter by tags | `okf --bundle "$BUNDLE" --output json list --tag operations --tag runbook` |
-| Read | `okf --bundle "$BUNDLE" --output json get "operations/deploy"` |
-| Inspect | `okf --bundle "$BUNDLE" --output json inspect "operations/deploy"` |
-| Search | `okf --bundle "$BUNDLE" --output json search "rollback procedure" --limit 8` |
-| Graph summary | `okf --bundle "$BUNDLE" --output json graph` |
-| Focus graph | `okf --bundle "$BUNDLE" --output json graph --id "operations/deploy"` |
+| Initialize bundle | `okf --bundle "$BUNDLE" init` |
+| Validate bundle | `okf --bundle "$BUNDLE" validate` |
+| Allow unresolved references | `okf --bundle "$BUNDLE" validate --allow-unresolved` |
+| Deny warnings | `okf --bundle "$BUNDLE" validate --deny-warnings` |
+| List bundle documents | `okf --bundle "$BUNDLE" list` |
+| Filter bundle by tags | `okf --bundle "$BUNDLE" list --tag operations --tag runbook` |
+| Read bundle ID/alias | `okf --bundle "$BUNDLE" get "operations/deploy"` |
+| Read Library URI | `okf --registry "$REGISTRY" get "okf://mcx/interfaces/xcap"` |
+| Inspect bundle document | `okf --bundle "$BUNDLE" inspect "operations/deploy"` |
+| Search active knowledge space | `okf search "rollback procedure" --limit 8` |
+| Restrict search to one Library | `okf search "XCAP document selector" --library mcx --limit 8` |
+| Graph summary for current bundle | `okf --bundle "$BUNDLE" graph` |
+| Focus bundle graph | `okf --bundle "$BUNDLE" graph --id "operations/deploy"` |
 | Graphviz DOT | `okf --bundle "$BUNDLE" graph --representation dot` |
 
-## Library Runtime operations
+Without `--library`, `search` includes the current bundle and mounted Libraries. The Runtime may use Library catalog/routing metadata and provider-specific lexical, semantic, graph, remote, or agentic retrieval internally. `--library` is optional advanced scoping, not a separate mode.
+
+A canonical `okf://` URI identifies a logical Library node, not necessarily a physical file.
+
+## Library management operations
 
 ```bash
 okf --registry "$REGISTRY" --output json library <command>
@@ -38,36 +46,8 @@ okf --registry "$REGISTRY" --output json library <command>
 | Unmount | `okf library unmount mcx` |
 | Uninstall | `okf library remove mcx` |
 | List installed/mounted Libraries | `okf library list` |
-| Global semantic catalog | `okf library catalog` |
-| One Library catalog | `okf library catalog mcx` |
-| Read canonical knowledge URI | `okf library read okf://mcx/interfaces/xcap` |
-| Query all mounted Libraries | `okf library query "XCAP document selector" --limit 8` |
-| Query one Library | `okf library query "XCAP document selector" --library mcx --limit 8` |
 
-Do not treat `library add`, `mount`, and `remove` as synonyms. Do not manually modify the registry/cache to simulate lifecycle commands.
-
-A canonical `okf://` URI identifies a logical node, not necessarily a physical file. A query result may come from lexical, semantic, graph, remote, or agent-backed retrieval. Preserve evidence URIs and provider/strategy metadata when they matter to the task.
-
-## Project Context operations
-
-Project Context is an application profile over a normal mounted Library. Its state file proves repository freshness; the Library remains the knowledge read/query interface.
-
-```bash
-okf --registry "$REGISTRY" --project-context "$PROFILE" --output json project <command>
-```
-
-| Intent | Command |
-| --- | --- |
-| Bootstrap current repository | `okf project init --repository . --project my-project --id project-context` |
-| Evaluate recovery state | `okf project status` |
-| Advance validated checkpoint to HEAD | `okf project checkpoint` |
-| Advance to explicit verified commit | `okf project checkpoint --revision <commit>` |
-
-`project init` creates a standard OKF Library scaffold under the profile directory, installs it into the Library registry, and mounts it. Populate the scaffold from authoritative project evidence, validate the project and knowledge, then checkpoint.
-
-`project status` returns one of `UNINITIALIZED`, `VALID`, `DIRTY`, or `UNKNOWN`, plus validated/current revisions, changed repository paths when available, and impacted knowledge topics. Use those impacted topics as the initial incremental-revalidation frontier rather than automatically relearning the entire repository.
-
-`project checkpoint` records the revision that the caller has already verified. It does not run project tests or prove knowledge correctness. Never checkpoint before required source/test/review validation is complete.
+Do not treat `library add`, `mount`, and `remove` as synonyms. Do not manually modify the registry/cache to simulate lifecycle commands. `library` is the management plane; knowledge retrieval remains `search`/`get`.
 
 ## Core identifiers
 
@@ -78,6 +58,6 @@ Core OKF document IDs are canonical slash-separated identifiers. When frontmatte
 - `0`: success.
 - `1`: validation failed or warnings were denied.
 - `2`: invalid CLI usage.
-- `3`: operational failure such as I/O, provider/source failure, unknown document/Library, Git/profile failure, or invalid mount/query operation.
+- `3`: operational failure such as I/O, provider/source failure, unknown document/Library, or invalid mount/search operation.
 
 Consume named JSON fields rather than human output or property order.

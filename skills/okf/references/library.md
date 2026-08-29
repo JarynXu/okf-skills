@@ -8,19 +8,23 @@ A Library is an independently identifiable knowledge unit. The Runtime is the ho
 
 Canonical knowledge addresses use `okf://<library>/<path>` and may resolve to physical Markdown, generated runtime state, remote objects, databases, or another provider.
 
-## Progressive knowledge access
+A mounted Library extends the active OKF knowledge space. It does not create a parallel knowledge-consumption interface.
+
+## Normal knowledge access
+
+Use the same OKF commands whether Libraries are installed or not:
 
 ```bash
-okf library list
-okf library catalog
-okf library catalog mcx
-okf library query "XCAP document selector" --library mcx
-okf library read okf://mcx/interfaces/xcap
+okf search "XCAP document selector"
+okf search "XCAP document selector" --library mcx
+okf get okf://mcx/interfaces/xcap
 ```
 
-Prefer the semantic catalog before broad querying. A specialist Library is responsible for telling the Runtime how its knowledge is organized; the host should not infer professional domain structure from filenames.
+`search` is the canonical retrieval operation. Without `--library`, the Runtime searches the active knowledge space and may use mounted Libraries' catalogs, routing hints, and provider capabilities to select optimized retrieval strategies. `--library` is optional advanced scoping.
 
-## Lifecycle
+For a known canonical `okf://` URI, use `get` for precise retrieval. Do not crawl backing directories just because a Library is mounted.
+
+## Lifecycle management
 
 ```bash
 okf library add ./knowledge --id local-knowledge
@@ -29,24 +33,29 @@ okf library mount example
 okf library update example
 okf library unmount example
 okf library remove example
+okf library list
 ```
 
-Install/register is distinct from mount. A mounted Library contributes routes and catalog entries. Unmounting preserves installation/materialization; removing/uninstalling removes Runtime-managed materialization such as a Git cache.
+`okf library ...` is the management plane. Install/register is distinct from mount. A mounted Library participates in active search and URI routing. Unmounting preserves installation/materialization; removing/uninstalling removes Runtime-managed materialization such as a Git cache.
 
 The Runtime registry defaults to `.okf/libraries.json` and can be selected with `--registry`.
 
-## Query behavior
+## Retrieval behavior
 
-A Library may implement exact, lexical, semantic, graph, remote, or agent-backed retrieval. Do not assume every `library query` is simple full-text search. Treat returned evidence URIs and provenance as the stable verification surface.
+A Library may internally implement exact, lexical, semantic, graph, remote, or agent-backed retrieval. The user still invokes `search`; provider-specific retrieval is an implementation detail selected by the Runtime and Library guidance.
 
-For a known URI, use `read` rather than query. For an exact ID when a provider offers exact lookup, prefer that deterministic path before semantic/agentic retrieval.
+Treat returned evidence URIs and provenance as the stable verification surface. For a known URI, prefer deterministic `get` over another broad search.
 
 ## Provider boundary
 
-Do not write logic such as "if this Library is Git, search it this way" in Agent behavior. Local, Git, object storage, HTTP, database, generated, and agent-backed forms are provider/source concerns. After resolution, use the same Runtime operations.
+Do not write logic such as "if this Library is Git, search it this way" in Agent behavior. Local, Git, object storage, HTTP, database, generated, and agent-backed forms are provider/source concerns. After resolution, use the same OKF consumption operations.
 
 A Runtime may expose a virtual filesystem/MCP/HTTP view, but these are adapters over the same logical namespace. A visible virtual file does not imply bytes exist as a real local file.
 
-## Dynamic global catalog
+## Dynamic routing metadata
 
-The global catalog is generated from currently mounted Libraries. Do not hand-maintain a second global directory document. Mount/unmount operations change the global catalog automatically while each Library remains responsible for its own optimized internal catalog.
+Each Library owns its semantic catalog and routing guidance. The Runtime may aggregate that metadata dynamically to route `search` efficiently. Do not hand-maintain a second global directory document and do not require users to browse a Library-specific catalog command before normal retrieval.
+
+## Domain boundary
+
+Concrete application Libraries own their own application lifecycle, domain rules, and Agent instructions. Generic OKF tooling must not add dedicated commands for one installed Library.
