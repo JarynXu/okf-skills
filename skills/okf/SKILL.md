@@ -1,6 +1,6 @@
 ---
 name: okf
-description: Work with Open Knowledge Format (OKF) bundles and pluggable OKF Libraries through the okf CLI or OKF MCP server. Use when an agent must discover, query, inspect, create, edit, migrate, validate, mount, update, or maintain OKF knowledge, or recover project context from an OKF Library.
+description: Work with Open Knowledge Format (OKF) bundles and pluggable OKF Libraries through the okf CLI or OKF MCP server. Use when an agent must discover, query, inspect, create, edit, migrate, or validate OKF knowledge; mount, update, or maintain OKF Libraries; or recover project context from an OKF Library.
 license: Apache-2.0
 compatibility: Requires the native okf CLI with Library Runtime support or a configured OKF MCP server. Core bundle editing additionally requires permission to modify its knowledge files.
 metadata:
