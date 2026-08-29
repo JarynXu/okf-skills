@@ -1,14 +1,18 @@
 # OKF MCP reference for Agents
 
-Use the OKF MCP server when configured. It is an adapter over the native OKF CLI/SDK and exposes both core bundle operations and Library Runtime operations without requiring the Agent to know backing storage details.
+Use the OKF MCP server when configured. It is an adapter over the native OKF CLI/SDK and must preserve the same user-facing knowledge model: mounted Libraries extend existing OKF operations rather than creating a parallel retrieval API.
 
-## Core bundle tools
+## Knowledge tools
 
 Typical tools include `okf_validate`, `okf_list`, `okf_get`, `okf_inspect`, `okf_search`, and `okf_graph`.
 
-## Library Runtime tools
+`okf_search` is the canonical retrieval tool before and after Libraries are mounted. It may accept an optional Library scope, but normally searches the active knowledge space and lets the Runtime route internally using Library-owned catalogs and provider capabilities.
 
-The Library surface includes:
+`okf_get` reads ordinary bundle identifiers/aliases and canonical `okf://<library>/<path>` Library URIs.
+
+## Library management tools
+
+The generic Library MCP surface is management-only:
 
 - `okf_library_add`
 - `okf_library_update`
@@ -16,13 +20,10 @@ The Library surface includes:
 - `okf_library_mount`
 - `okf_library_unmount`
 - `okf_library_list`
-- `okf_library_catalog`
-- `okf_library_read`
-- `okf_library_query`
 
-Use `okf_library_catalog` before broad retrieval when you need to understand which Library/topic owns a domain. Use `okf_library_read` for a known canonical URI and `okf_library_query` for retrieval delegated to the Library's provider.
+Do not add a new generic MCP tool simply because one concrete Library application needs a domain action. Application-specific tools belong to that Library/application package.
 
-Lifecycle tools can mutate Runtime state; read/query/catalog tools are read-only. Do not infer maintenance authority from query access.
+Lifecycle tools can mutate Runtime state; ordinary search/get remain read-only. Do not infer maintenance authority from retrieval access.
 
 1. Pass the narrowest arguments needed.
 2. Treat tool results as structured data and preserve evidence/provenance.
@@ -30,4 +31,4 @@ Lifecycle tools can mutate Runtime state; read/query/catalog tools are read-only
 4. For authorized content maintenance, use the maintenance path appropriate to the backing OKF Library and validate afterward.
 5. If the server reports a CLI, registry, source, or provider failure, fix configuration rather than silently substituting another knowledge implementation.
 
-`OKF_REGISTRY` may select the default Library registry and `OKF_BUNDLE` the default core bundle. The server handles MCP protocol negotiation; use only tools advertised by the host.
+`OKF_REGISTRY` may select the default Library registry and `OKF_BUNDLE` the default bundle. The server handles MCP protocol negotiation; use only tools advertised by the host.
