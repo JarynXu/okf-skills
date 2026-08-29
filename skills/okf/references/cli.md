@@ -1,6 +1,6 @@
 # OKF CLI reference for Agents
 
-Use global options before the subcommand. Core bundle operations select `--bundle`; Library operations use the persistent `--registry` (default `.okf/libraries.json`). Prefer `--output json` for Agent reasoning.
+Use global options before the subcommand. Core bundle operations select `--bundle`; Library operations use the persistent `--registry` (default `.okf/libraries.json`); Project Context operations use `--project-context` (default `.okf/project-context.json`). Prefer `--output json` for Agent reasoning.
 
 ## Core bundle operations
 
@@ -48,6 +48,27 @@ Do not treat `library add`, `mount`, and `remove` as synonyms. Do not manually m
 
 A canonical `okf://` URI identifies a logical node, not necessarily a physical file. A query result may come from lexical, semantic, graph, remote, or agent-backed retrieval. Preserve evidence URIs and provider/strategy metadata when they matter to the task.
 
+## Project Context operations
+
+Project Context is an application profile over a normal mounted Library. Its state file proves repository freshness; the Library remains the knowledge read/query interface.
+
+```bash
+okf --registry "$REGISTRY" --project-context "$PROFILE" --output json project <command>
+```
+
+| Intent | Command |
+| --- | --- |
+| Bootstrap current repository | `okf project init --repository . --project my-project --id project-context` |
+| Evaluate recovery state | `okf project status` |
+| Advance validated checkpoint to HEAD | `okf project checkpoint` |
+| Advance to explicit verified commit | `okf project checkpoint --revision <commit>` |
+
+`project init` creates a standard OKF Library scaffold under the profile directory, installs it into the Library registry, and mounts it. Populate the scaffold from authoritative project evidence, validate the project and knowledge, then checkpoint.
+
+`project status` returns one of `UNINITIALIZED`, `VALID`, `DIRTY`, or `UNKNOWN`, plus validated/current revisions, changed repository paths when available, and impacted knowledge topics. Use those impacted topics as the initial incremental-revalidation frontier rather than automatically relearning the entire repository.
+
+`project checkpoint` records the revision that the caller has already verified. It does not run project tests or prove knowledge correctness. Never checkpoint before required source/test/review validation is complete.
+
 ## Core identifiers
 
 Core OKF document IDs are canonical slash-separated identifiers. When frontmatter omits `id`, the parser derives it from the bundle-relative path without the Markdown suffix. A nested `index.md` maps to its directory ID. Aliases are accepted by read and inspection commands.
@@ -57,6 +78,6 @@ Core OKF document IDs are canonical slash-separated identifiers. When frontmatte
 - `0`: success.
 - `1`: validation failed or warnings were denied.
 - `2`: invalid CLI usage.
-- `3`: operational failure such as I/O, provider/source failure, unknown document/Library, or invalid mount/query operation.
+- `3`: operational failure such as I/O, provider/source failure, unknown document/Library, Git/profile failure, or invalid mount/query operation.
 
 Consume named JSON fields rather than human output or property order.
