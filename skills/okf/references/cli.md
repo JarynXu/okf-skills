@@ -42,12 +42,17 @@ okf --registry "$REGISTRY" --output json library <command>
 | Install local Library | `okf library add ./mcx --id mcx` |
 | Install Git Library | `okf library add https://github.com/example/mcx-library.git --id mcx --ref main` |
 | Update Library source | `okf library update mcx` |
-| Mount | `okf library mount mcx` |
+| Mount ordinary Library | `okf library mount mcx` |
+| Mount reviewed process provider | `okf library mount project-context --allow-provider process` |
+| Mount reviewed HTTP provider | `okf library mount remote-docs --allow-provider http` |
+| Authorize multiple reviewed kinds | `okf library mount mixed --allow-provider process --allow-provider http` |
 | Unmount | `okf library unmount mcx` |
 | Uninstall | `okf library remove mcx` |
-| List installed/mounted Libraries | `okf library list` |
+| List installed/mounted/provider state | `okf library list` |
 
-Do not treat `library add`, `mount`, and `remove` as synonyms. Do not manually modify the registry/cache to simulate lifecycle commands. `library` is the management plane; knowledge retrieval remains `search`/`get`.
+Provider declarations in `okf-library.yaml` are inert at `library add`/`update`. If a Library declares an external provider kind, `mount` fails closed until that kind is explicitly approved with `--allow-provider`. Review the manifest first because `process` means code execution and `http` means network access. Provider approvals are local Runtime state; updating source does not silently approve new kinds.
+
+Do not treat `library add`, `mount`, and `remove` as synonyms. Do not manually modify the registry/cache to simulate lifecycle or provider authorization. `library` is the management plane; knowledge retrieval remains `search`/`get`.
 
 ## Core identifiers
 
@@ -58,6 +63,6 @@ Core OKF document IDs are canonical slash-separated identifiers. When frontmatte
 - `0`: success.
 - `1`: validation failed or warnings were denied.
 - `2`: invalid CLI usage.
-- `3`: operational failure such as I/O, provider/source failure, unknown document/Library, or invalid mount/search operation.
+- `3`: operational failure such as I/O, provider/source failure, unknown document/Library, denied provider activation, or invalid mount/search operation.
 
 Consume named JSON fields rather than human output or property order.

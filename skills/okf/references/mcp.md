@@ -25,6 +25,17 @@ Do not add a new generic MCP tool simply because one concrete Library applicatio
 
 Lifecycle tools can mutate Runtime state; ordinary search/get remain read-only. Do not infer maintenance authority from retrieval access.
 
+Provider declarations remain inert during add and update. When a reviewed Library requires an external provider, pass only the required kinds through `okf_library_mount.allowProviders`, for example:
+
+```json
+{
+  "id": "project-context",
+  "allowProviders": ["process"]
+}
+```
+
+Each value maps to the CLI's `--allow-provider <kind>`. Treat `process` as code execution, `http` as network access and possible disclosure, and other kinds according to their equivalent authority. Do not authorize a kind merely because the manifest requests it. Updating a Library does not silently approve newly introduced providers.
+
 1. Pass the narrowest arguments needed.
 2. Treat tool results as structured data and preserve evidence/provenance.
 3. Do not emulate unavailable Runtime behavior by crawling Library backing storage.

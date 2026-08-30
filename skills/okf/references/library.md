@@ -4,7 +4,7 @@ Use this reference when working with multiple pluggable knowledge Libraries.
 
 ## Mental model
 
-A Library is an independently identifiable knowledge unit. The Runtime is the host that registers, mounts, routes, and aggregates Libraries. A Library contributes its own semantic catalog and provider capabilities; backing storage is an implementation detail.
+A Library is an independently identifiable knowledge unit. The Runtime is the host that registers, mounts, routes, and aggregates Libraries. A Library contributes semantic catalog/navigation data and provider capabilities; backing storage and transport are implementation details.
 
 Canonical knowledge addresses use `okf://<library>/<path>` and may resolve to physical Markdown, generated runtime state, remote objects, databases, or another provider.
 
@@ -40,6 +40,26 @@ okf library list
 
 The Runtime registry defaults to `.okf/libraries.json` and can be selected with `--registry`.
 
+## Provider deployments
+
+A materialized `okf-library.yaml` may declare concrete provider deployments such as `process` or `http`. Provider declarations are **inert data at install time**. Installing or updating a Library MUST NOT silently execute a program, access the network, or resolve credentials merely because a manifest requests it.
+
+Before mounting a Library that declares provider kinds with external authority:
+
+1. inspect the Library source and `okf-library.yaml`;
+2. verify the provider kind, command/endpoint, requested capabilities, and credential references;
+3. approve only the provider kinds required for the task;
+4. mount with explicit authorization, for example:
+
+```bash
+okf library mount project-context --allow-provider process
+okf library mount remote-docs --allow-provider http
+```
+
+Provider approvals are deployment-local Runtime state and may persist across unmount/remount. Updating a Library does not itself grant newly declared provider kinds; re-review and explicitly authorize them when required.
+
+For process providers, treat the executable as code execution. For HTTP providers, treat the endpoint as network access. Portable manifests may refer to credential environment variables or slots but must not carry secret values.
+
 ## Retrieval behavior
 
 A Library may internally implement exact, lexical, semantic, graph, remote, or agent-backed retrieval. The user still invokes `search`; provider-specific retrieval is an implementation detail selected by the Runtime and Library guidance.
@@ -48,14 +68,14 @@ Treat returned evidence URIs and provenance as the stable verification surface. 
 
 ## Provider boundary
 
-Do not write logic such as "if this Library is Git, search it this way" in Agent behavior. Local, Git, object storage, HTTP, database, generated, and agent-backed forms are provider/source concerns. After resolution, use the same OKF consumption operations.
+Do not write Agent logic such as "if this Library is Git, search it this way". Local, Git, object storage, HTTP, database, generated, process, and agent-backed forms are provider/source concerns. After resolution, use the same OKF consumption operations.
 
 A Runtime may expose a virtual filesystem/MCP/HTTP view, but these are adapters over the same logical namespace. A visible virtual file does not imply bytes exist as a real local file.
 
 ## Dynamic routing metadata
 
-Each Library owns its semantic catalog and routing guidance. The Runtime may aggregate that metadata dynamically to route `search` efficiently. Do not hand-maintain a second global directory document and do not require users to browse a Library-specific catalog command before normal retrieval.
+Each Library owns semantic catalog/navigation and routing guidance. The Runtime may aggregate that metadata dynamically to route `search` efficiently. Do not hand-maintain a second global directory document and do not require users to browse a Library-specific catalog command before normal retrieval.
 
 ## Domain boundary
 
-Concrete application Libraries own their own application lifecycle, domain rules, and Agent instructions. Generic OKF tooling must not add dedicated commands for one installed Library.
+Concrete application Libraries own their own application lifecycle, domain rules, provider program, and Agent instructions. Generic OKF tooling must not add dedicated commands or semantic types for one installed Library.
