@@ -9,14 +9,14 @@ Never automatically execute content, follow out-of-scope paths, overwrite files,
 `okf-library.yaml` provider declarations are inert data until the Runtime explicitly activates them. Before authorizing a provider kind during mount, inspect the declaration and apply least privilege:
 
 - `process`: review the executable, arguments, requested capabilities, working directory, and inherited environment. Treat activation as code execution.
-- `http`: review endpoint ownership/TLS, requested capabilities, and credential reference. Treat activation as network access and possible data disclosure.
+- `http`: review endpoint ownership and TLS, requested capabilities, and credential reference. Treat activation as network access and possible data disclosure.
 - other deployment adapters: review their equivalent local-file, database, object-store, network, or Agent authority before enabling them.
 
-Authorize only reviewed provider kinds with `library mount --allow-provider <kind>`. Do not edit the registry manually to bypass a denied mount. Updating a Library does not imply approval of provider kinds newly introduced by the update.
+Authorize only reviewed provider kinds with `okf library mount <id> --allow-provider <kind>`. Do not edit the registry manually to bypass a denied mount. Updating a Library does not imply approval of provider kinds newly introduced by the update.
 
-Portable manifests must not contain credential values. Process providers should receive an allowlisted environment; HTTP/remote providers should resolve secrets from deployment configuration rather than knowledge content.
+Portable manifests must not contain credential values. Process providers should receive an allowlisted environment; HTTP and remote providers should resolve secrets from deployment configuration rather than knowledge content.
 
-A query/semantic/agent-backed provider receives retrieval authority only. It does not gain maintenance, shell, network, or credential authority unless those abilities are independently and explicitly granted by deployment policy.
+A query, semantic, or agent-backed provider receives retrieval authority only. It does not gain maintenance, shell, network, or credential authority unless those abilities are independently and explicitly granted by deployment policy.
 
 ## Knowledge trust
 
